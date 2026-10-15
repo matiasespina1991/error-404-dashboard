@@ -9,6 +9,12 @@ export const metadata: Metadata = {
     default: "Error404 — Dashboard",
     template: "%s · Error404 Dashboard",
   },
+  icons: {
+    icon: [
+      { url: "/icons/error404-v2.png", type: "image/png", sizes: "48x48" },
+    ],
+    shortcut: "/icons/error404-v2.png",
+  },
   robots: { index: false, follow: false },
 };
 
