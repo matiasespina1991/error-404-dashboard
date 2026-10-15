@@ -71,11 +71,10 @@ test("Events normalize offsets to UTC and reject reversed or missing-zone dates"
     ),
   );
 });
-test("Reject active URL schemes, missing alt, invalid timezone and changed slugs", () => {
+test("Reject active URL schemes, invalid timezone and changed slugs", () => {
   for (const patch of [
     { ticketUrl: "javascript:alert(1)" },
     { startsAt: "2026-02-31T20:00:00Z" },
-    { cover: { ...image, alt: "" } },
     { timeZone: "Not/AZone" },
     { slug: "other" },
   ])
@@ -155,4 +154,19 @@ test("Interview requires artist/date/cover and uses separate kind", () => {
       true,
     ),
   );
+});
+
+test("Image descriptions are optional and fall back to the content title", () => {
+  const entry = validateEntry(
+    {
+      ...valid(),
+      cover: { ...image, alt: "" },
+      gallery: [{ ...image, alt: "" }],
+    },
+    "events",
+    "night-one",
+    true,
+  );
+  assert.equal(entry.cover?.alt, entry.title);
+  assert.equal(entry.gallery[0]!.alt, entry.title);
 });

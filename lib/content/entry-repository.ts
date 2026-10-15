@@ -1,9 +1,12 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
+import { createWithUniqueSlug, SlugCollisionError } from "./slug";
 import { FieldPath } from "firebase-admin/firestore";
 import { editorialDb, editorialConfigured } from "./firebase-admin";
 import { mediaCollection } from "./repository";
 import {
   emptyEntry,
+  validateEntry,
   SLUG,
   type ContentKind,
   type EntryDocument,
@@ -124,11 +127,14 @@ export async function saveEntry(
   revision: number,
   intent: PublicationIntent,
   uid: string,
+  createOnly = false,
 ): Promise<EntryDocument> {
   const db = editorialDb();
   return db.runTransaction(async (transaction) => {
     const ref = entries(content.kind).doc(checkedSlug(content.slug)),
       snapshot = await transaction.get(ref);
+    if (createOnly && snapshot.exists)
+      throw new SlugCollisionError("La URL ya existe.");
     const current = snapshot.exists
       ? (snapshot.data() as EntryDocument)
       : emptyEntry(content.kind, content.slug);
@@ -181,10 +187,51 @@ export async function saveEntry(
       const item = next.published;
       transaction.set(publicRef, {
         content: item,
-        sortDate: item.kind === "events" ? item.endsAt : item.publishedDate,
+        sortDate:
+          item.kind === "events"
+            ? item.endsAt
+            : item.kind === "interviews"
+              ? item.publishedDate
+              : next.publishedAt,
         updatedAt: next.updatedAt,
       });
     } else transaction.delete(publicRef);
     return next;
   });
+}
+
+export async function createEntry(
+  value: unknown,
+  kind: ContentKind,
+  intent: "save" | "publish",
+  uid: string,
+): Promise<EntryDocument> {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !("title" in value) ||
+    typeof value.title !== "string" ||
+    !value.title.trim()
+  )
+    throw new EditorialError("Agregá un título antes de guardar.");
+  return createWithUniqueSlug(
+    value.title,
+    async (slug) => {
+      let content: ContentEntry;
+      try {
+        content = validateEntry(
+          { ...value, slug },
+          kind,
+          slug,
+          intent === "publish",
+        );
+      } catch (error) {
+        throw new EditorialError(
+          error instanceof Error ? error.message : "Contenido inválido.",
+        );
+      }
+      return saveEntry(content, 0, intent, uid, true);
+    },
+    randomUUID,
+  );
 }

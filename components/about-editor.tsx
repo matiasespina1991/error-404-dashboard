@@ -94,11 +94,7 @@ export function AboutEditor({
   }
 
   return (
-    <PageContainer
-      pageTitle="About"
-      pageDescription="Editá el contenido de la sección About."
-      className="justify-self-start"
-    >
+    <PageContainer pageTitle="About" className="justify-self-start">
       <Card className="mx-auto w-full">
         <CardHeader>
           <CardTitle className="text-left text-2xl font-bold">About</CardTitle>
@@ -162,7 +158,6 @@ export function AboutEditor({
                       name="imageAlt"
                       label="Descripción de imagen"
                       description="Describí lo que muestra la imagen."
-                      required
                     />
                   )}
                 </div>

@@ -373,7 +373,6 @@ export default function MediaPage({ initial }: { initial: MediaPageData }) {
     <>
       <PageContainer
         pageTitle="Galería"
-        pageDescription="Gestiona las imágenes del sitio."
         pageHeaderAction={
           selectedMedia ? (
             <div ref={actionBarRef} className="flex items-center gap-2">

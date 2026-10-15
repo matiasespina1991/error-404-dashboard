@@ -12,8 +12,13 @@ export type EntryRow = {
 };
 
 export function entryRows(items: EntryDocument[]): EntryRow[] {
-  return items.map(({ draft, published }) => {
-    const date = draft.kind === "events" ? draft.startsAt : draft.publishedDate;
+  return items.map(({ draft, published, publishedAt, updatedAt }) => {
+    const date =
+      draft.kind === "events"
+        ? draft.startsAt
+        : draft.kind === "interviews"
+          ? draft.publishedDate
+          : publishedAt || updatedAt || "";
     const timeZone = draft.kind === "events" ? draft.timeZone : "Europe/Madrid";
     const formattedDate =
       date && Number.isFinite(Date.parse(date))
@@ -26,7 +31,9 @@ export function entryRows(items: EntryDocument[]): EntryRow[] {
       formattedDate,
       ...(draft.kind === "events"
         ? [draft.venue, draft.city, draft.country]
-        : [draft.artist]),
+        : draft.kind === "interviews"
+          ? [draft.artist]
+          : [draft.format, draft.genres.join(", ")]),
     ]
       .filter(Boolean)
       .join(" · ");
@@ -62,7 +69,9 @@ export function entryRows(items: EntryDocument[]): EntryRow[] {
         status,
         draft.kind === "interviews"
           ? draft.interviewer
-          : draft.lineup.join(" "),
+          : draft.kind === "events"
+            ? draft.lineup.join(" ")
+            : draft.tracks.map((track) => track.title).join(" "),
       ]
         .join(" ")
         .toLocaleLowerCase("es"),

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ModeToggle } from "./layout/theme-toggle";
 import {
   CalendarDays,
+  Disc3,
   Mic,
   Images,
   FileText,
@@ -53,6 +54,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 const links = [
+  { href: "/releases", title: "Releases", icon: Disc3 },
   { href: "/events", title: "Eventos", icon: CalendarDays },
   { href: "/interviews", title: "Entrevistas", icon: Mic },
   { href: "/about", title: "About", icon: FileText },
@@ -298,7 +300,7 @@ function Header({ email, photoURL, name }: ProfileProps) {
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbPage className="max-w-44 truncate">
-                    {decodeURIComponent(slug)}
+                    {slug === "new" ? "Nuevo" : decodeURIComponent(slug)}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </>
@@ -341,8 +343,14 @@ export function Shell({
         <main
           id="workspace"
           className={
-            ["/media", "/about", "/events", "/interviews"].includes(path) ||
-            /^\/(events|interviews)\/[^/]+$/.test(path)
+            [
+              "/media",
+              "/about",
+              "/events",
+              "/interviews",
+              "/releases",
+            ].includes(path) ||
+            /^\/(events|interviews|releases)\/[^/]+$/.test(path)
               ? "flex min-h-0 flex-1 flex-col"
               : "flex flex-1 flex-col p-4 pt-0 md:p-6 md:pt-0"
           }

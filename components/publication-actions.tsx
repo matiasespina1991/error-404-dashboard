@@ -17,7 +17,7 @@ export function PublicationActions({
   onUndo: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
-  preview: string;
+  preview?: string;
 }) {
   return (
     <div className="space-y-4">
@@ -43,11 +43,13 @@ export function PublicationActions({
         <Button type="button" disabled={busy} onClick={onPublish}>
           Publicar
         </Button>
-        <Button type="button" variant="outline" asChild>
-          <Link href={preview} target="_blank">
-            Ver borrador guardado
-          </Link>
-        </Button>
+        {preview && (
+          <Button type="button" variant="outline" asChild>
+            <Link href={preview} target="_blank">
+              Ver borrador guardado
+            </Link>
+          </Button>
+        )}
         {published && (
           <Button
             type="button"

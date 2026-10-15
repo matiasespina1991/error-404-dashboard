@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireEditor } from "lib/auth/session";
-import { editorialResponse } from "lib/content/http";
+import { assertSameOrigin, requireEditor } from "lib/auth/session";
+import { editorialResponse, limitedBody } from "lib/content/http";
 import { isContentKind } from "lib/content/entries";
 import { EditorialError } from "lib/content/validation";
-import { listEntries, listPublished } from "lib/content/entry-repository";
+import {
+  createEntry,
+  listEntries,
+  listPublished,
+} from "lib/content/entry-repository";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(
@@ -33,6 +37,40 @@ export async function GET(
       { schemaVersion: 1, ...result },
       { headers: { "Cache-Control": "no-store" } },
     );
+  } catch (error) {
+    return editorialResponse(error);
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ kind: string }> },
+) {
+  try {
+    assertSameOrigin(request);
+    const editor = await requireEditor();
+    const { kind } = await params;
+    if (!isContentKind(kind))
+      throw new EditorialError("Sección no encontrada.", 404);
+    let input;
+    try {
+      input = JSON.parse((await limitedBody(request, 600000)).toString());
+    } catch (error) {
+      if (error instanceof EditorialError) throw error;
+      throw new EditorialError("Solicitud inválida.");
+    }
+    if (!input || !["save", "publish"].includes(input.intent))
+      throw new EditorialError("Acción inválida.");
+    const result = await createEntry(
+      input.content,
+      kind,
+      input.intent,
+      editor.uid,
+    );
+    return NextResponse.json(result, {
+      status: 201,
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     return editorialResponse(error);
   }

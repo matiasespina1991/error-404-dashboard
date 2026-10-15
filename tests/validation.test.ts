@@ -21,10 +21,13 @@ test("drafts allow incomplete text; publication rejects it", () => {
   assert.throws(() => parseAbout(draft, true), /completá/);
 });
 
-test("published images require alternative text and a valid asset ID", () => {
+test("published images accept optional descriptions and still require a valid asset ID", () => {
   const imageId = "mabc123-123e4567-e89b-42d3-a456-426614174000";
   assert.equal(MEDIA_ID.test(imageId), true);
-  assert.throws(() => parseAbout({ ...content, imageId }, true), /descripción/);
+  assert.equal(
+    parseAbout({ ...content, imageId }, true).imageAlt,
+    content.title,
+  );
   assert.equal(
     parseAbout({ ...content, imageId, imageAlt: "The team" }, true).imageId,
     imageId,

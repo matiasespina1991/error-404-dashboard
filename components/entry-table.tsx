@@ -74,13 +74,24 @@ export function EntryTable({
       {
         accessorKey: "date",
         meta: {
-          label: kind === "events" ? "Fecha y lugar" : "Fecha y artista",
+          label:
+            kind === "events"
+              ? "Fecha y lugar"
+              : kind === "interviews"
+                ? "Fecha y artista"
+                : "Publicación / formato / géneros",
         },
         size: 320,
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={kind === "events" ? "Fecha y lugar" : "Fecha y artista"}
+            title={
+              kind === "events"
+                ? "Fecha y lugar"
+                : kind === "interviews"
+                  ? "Fecha y artista"
+                  : "Publicación / formato / géneros"
+            }
           />
         ),
         cell: ({ row }) => (
@@ -158,10 +169,18 @@ export function EntryTable({
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <Input
             aria-label={
-              kind === "events" ? "Buscar eventos" : "Buscar entrevistas"
+              kind === "events"
+                ? "Buscar eventos"
+                : kind === "interviews"
+                  ? "Buscar entrevistas"
+                  : "Buscar releases"
             }
             placeholder={
-              kind === "events" ? "Buscar eventos..." : "Buscar entrevistas..."
+              kind === "events"
+                ? "Buscar eventos..."
+                : kind === "interviews"
+                  ? "Buscar entrevistas..."
+                  : "Buscar releases..."
             }
             value={search}
             onChange={(event) => {

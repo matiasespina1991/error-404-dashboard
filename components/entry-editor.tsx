@@ -1,6 +1,7 @@
 "use client";
 import PageContainer from "@/components/layout/page-container";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ import type { ContentEntry, EntryDocument } from "@/lib/content/entries";
 import type { MediaAsset, MediaPage } from "@/lib/content/types";
 import type { MediaDoc } from "@/lib/media-upload";
 import { requestJson } from "./client";
+import { ReleaseFieldsEditor } from "./release-fields-editor";
 
 const editorValues = (content: ContentEntry): ContentEntry => ({
   ...content,
@@ -39,11 +41,14 @@ export function EntryEditor({
   initial,
   initialMedia,
   selected,
+  newEntry = false,
 }: {
   initial: EntryDocument;
   initialMedia: MediaPage;
   selected: MediaAsset[];
+  newEntry?: boolean;
 }) {
+  const router = useRouter();
   const [saved, setSaved] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -53,6 +58,16 @@ export function EntryEditor({
   });
   const content = form.watch();
   const isEvent = content.kind === "events";
+  const singular = isEvent
+    ? "evento"
+    : content.kind === "releases"
+      ? "release"
+      : "entrevista";
+  const plural = isEvent
+    ? "Eventos"
+    : content.kind === "releases"
+      ? "Releases"
+      : "Entrevistas";
   const { items, remember } = useContentMedia(initialMedia, selected);
   const { requestImage, dialog } = useEditorImages(remember);
   const cover = content.cover ? items.get(content.cover.id) : undefined;
@@ -74,10 +89,13 @@ export function EntryEditor({
     setMessage("");
     setError(false);
     try {
+      const creating = newEntry && saved.revision === 0;
       const next = await requestJson<EntryDocument>(
-        `/api/content/${content.kind}/${content.slug}`,
+        creating
+          ? `/api/content/${content.kind}`
+          : `/api/content/${content.kind}/${content.slug}`,
         {
-          method: "PUT",
+          method: creating ? "POST" : "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             content: form.getValues(),
@@ -96,6 +114,7 @@ export function EntryEditor({
             : "Borrador guardado.";
       setMessage(message);
       toast.success(message);
+      if (creating) router.replace(`/${next.draft.kind}/${next.draft.slug}`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "No se pudo guardar.";
@@ -109,14 +128,17 @@ export function EntryEditor({
 
   return (
     <PageContainer
-      pageTitle={`${saved.revision ? "Editar" : "Agregar"} ${isEvent ? "evento" : "entrevista"}`}
-      pageDescription="Actualizá el contenido y las imágenes."
+      pageTitle={
+        content.kind === "releases" && !saved.revision
+          ? "Nuevo release"
+          : `${saved.revision ? "Editar" : "Agregar"} ${singular}`
+      }
     >
       <Link
         href={`/${content.kind}`}
         className="mb-4 inline-block text-sm text-muted-foreground"
       >
-        ← {isEvent ? "Eventos" : "Entrevistas"}
+        ← {plural}
       </Link>
       <Card className="mx-auto w-full">
         <CardContent>
@@ -135,7 +157,9 @@ export function EntryEditor({
                     placeholder={
                       isEvent
                         ? "Ingresá el título del evento"
-                        : "Ingresá el título de la entrevista"
+                        : content.kind === "releases"
+                          ? "Ingresá el título del release"
+                          : "Ingresá el título de la entrevista"
                     }
                     required
                   />
@@ -153,12 +177,16 @@ export function EntryEditor({
                     placeholder={
                       isEvent
                         ? "Escribí el texto del evento..."
-                        : "Escribí la entrevista..."
+                        : content.kind === "releases"
+                          ? "Escribí el contenido del release..."
+                          : "Escribí la entrevista..."
                     }
                     disabled={busy}
                     onRequestImage={requestImage}
                   />
-                  {isEvent ? (
+                  {content.kind === "releases" ? (
+                    <ReleaseFieldsEditor />
+                  ) : isEvent ? (
                     <div className="space-y-6">
                       <h2 className="text-lg font-semibold">
                         Fecha, lugar y artistas
@@ -368,7 +396,6 @@ export function EntryEditor({
                       control={form.control}
                       name="cover.alt"
                       label="Descripción de portada"
-                      required
                     />
                   )}
                   <ContentMediaField
@@ -399,7 +426,6 @@ export function EntryEditor({
                       control={form.control}
                       name={`gallery.${index}.alt`}
                       label={`Descripción de imagen ${index + 1}`}
-                      required
                     />
                   ))}
                 </div>
@@ -420,7 +446,11 @@ export function EntryEditor({
               onUndo={() => form.reset(editorValues(saved.draft))}
               onPublish={() => void save("publish")}
               onUnpublish={() => void save("unpublish")}
-              preview={`/${content.kind}/${content.slug}/preview`}
+              preview={
+                saved.revision
+                  ? `/${content.kind}/${content.slug}/preview`
+                  : undefined
+              }
             />
           </Form>
         </CardContent>

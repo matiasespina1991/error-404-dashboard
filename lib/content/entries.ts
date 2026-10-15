@@ -1,8 +1,9 @@
 import { SLUG, IMAGE_ID } from "./patterns";
 import { parseBody, hasBodyContent } from "./rich-text";
 import type { BodyFormat } from "./rich-text-format";
+import { parseReleaseFields, type ReleaseFields } from "./releases";
 // Version 1 public contract, mirrored in the independent dashboard project.
-export type ContentKind = "events" | "interviews";
+export type ContentKind = "events" | "interviews" | "releases";
 export type ContentImage = { id: string; alt: string };
 type CommonContent = {
   slug: string;
@@ -41,7 +42,8 @@ export type InterviewContent = CommonContent & {
   publishedDate: string;
   category: string;
 };
-export type ContentEntry = EventContent | InterviewContent;
+export type ReleaseContent = CommonContent & ReleaseFields;
+export type ContentEntry = EventContent | InterviewContent | ReleaseContent;
 export type ContentPage = {
   items: ContentEntry[];
   cursor: string | null;
@@ -58,7 +60,7 @@ export type EntryDocument = {
 };
 export { SLUG, IMAGE_ID } from "./patterns";
 export function isContentKind(value: string): value is ContentKind {
-  return value === "events" || value === "interviews";
+  return value === "events" || value === "interviews" || value === "releases";
 }
 export function emptyEntry(kind: ContentKind, slug: string): EntryDocument {
   const common = {
@@ -93,14 +95,23 @@ export function emptyEntry(kind: ContentKind, slug: string): EntryDocument {
           facebookUrl: "",
           contactEmail: "",
         }
-      : {
-          ...common,
-          kind,
-          artist: "",
-          interviewer: "",
-          publishedDate: "",
-          category: "Conversation",
-        };
+      : kind === "releases"
+        ? {
+            ...common,
+            kind,
+            genres: [],
+            purchaseUrl: "",
+            format: "vinyl",
+            tracks: [],
+          }
+        : {
+            ...common,
+            kind,
+            artist: "",
+            interviewer: "",
+            publishedDate: "",
+            category: "Conversation",
+          };
   return {
     schemaVersion: 1,
     revision: 0,
@@ -145,9 +156,12 @@ export function validateEntry(
       item.alt.length > 300
     )
       return fail("Imagen inválida.");
-    if (publishing && !item.alt.trim())
-      return fail("Agregá una descripción a cada imagen.");
-    return { id: item.id, alt: item.alt.trim() };
+    return {
+      id: item.id,
+      alt:
+        item.alt.trim() ||
+        (typeof data.title === "string" ? data.title.trim() : ""),
+    };
   };
   if (!Array.isArray(data.gallery) || data.gallery.length > 12)
     return fail("Máximo 12 imágenes en la galería.");
@@ -170,6 +184,8 @@ export function validateEntry(
     return fail(
       "Para publicar completá título, resumen, texto e imagen principal.",
     );
+  if (kind === "releases")
+    return { ...common, ...parseReleaseFields(data, publishing) };
   const url = (key: string) => {
     const result = text(key, 2000);
     if (result) {

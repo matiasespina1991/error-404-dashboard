@@ -58,11 +58,7 @@ export function parseAbout(value: unknown, publishing: boolean): AboutContent {
       "Para publicar, completá título, introducción y texto.",
     );
   }
-  if (publishing && result.imageId && !result.imageAlt) {
-    throw new EditorialError(
-      "Agregá una descripción para la imagen antes de publicar.",
-    );
-  }
+  if (result.imageId && !result.imageAlt) result.imageAlt = result.title;
   return result;
 }
 

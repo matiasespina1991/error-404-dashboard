@@ -111,7 +111,7 @@ Referencias oficiales usadas para la implementación: [sesiones Firebase](https:
 
 ## Eventos y entrevistas
 
-El panel incluye `/events` y `/interviews` con listado paginado, creación por slug fijo, edición, imágenes de biblioteca, borrador, preview privada, publicación y retirada. El home público toma los eventos y las entrevistas publicados; Shopify sigue siendo responsable de los discos. Las fechas del editor se introducen en ISO con offset explícito y se guardan normalizadas en UTC.
+El panel incluye `/events` y `/interviews` con listado paginado, creación directa con URL automática desde el título, edición, imágenes de biblioteca, borrador, preview privada, publicación y retirada. El home público toma los eventos y las entrevistas publicados; Shopify sigue siendo responsable de los discos. Las fechas del editor se introducen en ISO con offset explícito y se guardan normalizadas en UTC.
 
 Colecciones: `content_events`, `content_interviews` (documentos administrativos) y `published_events`, `published_interviews` (proyecciones públicas). Publicación y referencias de imágenes se actualizan por transacción. La API pública sirve páginas de 24 con cursor; la consulta administrativa requiere sesión. Las reglas existentes siguen denegando acceso directo.
 
@@ -136,5 +136,5 @@ node scripts/import-local-content.cjs --apply  # crear y publicar solo lo que fa
 
 Requiere el proyecto web hermano como fuente de los ejemplos y Node >=22.12.0. Lee las credenciales privadas de `.env.local`. La web usa `DASHBOARD_URL` para obtener los datos publicados, sin claves de administración.
 
-Para crear contenido nuevo: Eventos o Entrevistas → completar la URL → Crear evento/Crear entrevista → completar campos y elegir una imagen de Galería → Guardar borrador o Publicar. Los borradores no se muestran en el sitio público.
+Para crear contenido nuevo: Eventos, Entrevistas o Releases → Agregar → completar el formulario → Guardar borrador o Publicar. La URL se genera desde el título en el primer guardado; si ya existe, se añade un ID sin sobrescribir contenido. Los borradores no se muestran en el sitio público y cambiar el título después no cambia la URL.
 # error-404-dashboard
